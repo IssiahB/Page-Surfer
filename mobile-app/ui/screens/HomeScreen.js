@@ -22,7 +22,7 @@ function handleLogin() {
     console.log("Login");
 }
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
     const [fontsLoaded] = useFonts({
         "Forum-Regular": require("../../assets/fonts/Forum-Regular.ttf"),
     });
@@ -48,14 +48,17 @@ export default function HomeScreen() {
                 textContent="Sign Up"
                 textColor="#db5300"
                 btnColor="#fff4ed"
-                onPress={handleSignup}
-                style={{ marginTop: "60%" }}
+                onPress={() => {
+                    navigation.navigate("Signup");
+                }}
             />
             <Button
                 textContent="Log In"
                 textColor="#fff4ed"
                 btnColor="#db5300"
-                onPress={handleLogin}
+                onPress={() => {
+                    navigation.navigate("Login");
+                }}
                 style={{ marginTop: "10%" }}
             />
         </ImageBackground>
@@ -79,5 +82,6 @@ const styles = StyleSheet.create({
         marginTop: "5%",
         fontFamily: "Forum-Regular",
         fontSize: 20,
+        marginBottom: "60%",
     },
 });
