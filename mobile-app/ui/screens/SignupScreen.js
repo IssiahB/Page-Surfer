@@ -1,8 +1,6 @@
-import React, { useState } from "react";
-import { useFonts } from "expo-font";
+import React, { useState, useContext } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Button from "../components/Button";
-import { signupUser, singupUser } from "../../api/auth";
+import { Snackbar } from "react-native-paper";
 import {
     ImageBackground,
     StatusBar,
@@ -13,16 +11,14 @@ import {
     TouchableOpacity,
 } from "react-native";
 
+import Button from "../components/Button";
+import { signupUser } from "../../api/auth";
+import { AuthContext } from "../../logic/Contexts";
+
 const backgroundImage = require("../../assets/images/register-background.jpg");
 
-const onPressForgotPassword = () => {
-    // Do something about forgot password operation
-};
-
 export default function SignupScreen({ navigation }) {
-    const [fontsLoaded] = useFonts({
-        "Forum-Regular": require("../../assets/fonts/Forum-Regular.ttf"),
-    });
+    const { isLoggedIn, setIsLoggedIn } = useContext(AuthContext);
 
     const [error, setError] = useState({
         errorMessage: "",
@@ -36,6 +32,8 @@ export default function SignupScreen({ navigation }) {
     // State variable to hold the password
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+
+    const [visibleSnack, setVisibleSnack] = useState(false);
 
     // Function to toggle the password visibility state
     const toggleShowPassword = () => {
@@ -51,7 +49,7 @@ export default function SignupScreen({ navigation }) {
             );
 
             if (response.success) {
-                console.log("Successfully created user");
+                setIsLoggedIn(true);
             } else {
                 setError({ errorMessage: response.message, errorFlag: true });
             }
@@ -68,12 +66,16 @@ export default function SignupScreen({ navigation }) {
             style={styles.backgound}
         >
             <StatusBar backgroundColor="#fff4ed" barStyle="dark-content" />
+
+            {/* Title and error fields */}
             <Text style={styles.title}> Sign Up </Text>
             {error.errorFlag ? (
                 <Text style={styles.error}>{error.errorMessage}</Text>
             ) : (
                 <Text></Text>
             )}
+
+            {/* Email Field */}
             <View style={styles.container}>
                 <TextInput
                     style={styles.input}
@@ -84,6 +86,8 @@ export default function SignupScreen({ navigation }) {
                     placeholderTextColor="#003f5c"
                 />
             </View>
+
+            {/* Username Field */}
             <View style={styles.container}>
                 <TextInput
                     style={styles.input}
@@ -94,6 +98,8 @@ export default function SignupScreen({ navigation }) {
                     placeholderTextColor="#003f5c"
                 />
             </View>
+
+            {/* Password Field */}
             <View style={styles.container}>
                 <TextInput
                     // Set secureTextEntry prop to hide
@@ -114,6 +120,7 @@ export default function SignupScreen({ navigation }) {
                 />
             </View>
 
+            {/* Signup Button */}
             <Button
                 textContent="Signup"
                 textColor="#fff4ed"
@@ -121,9 +128,20 @@ export default function SignupScreen({ navigation }) {
                 onPress={() => onPressSignUp()}
                 style={styles.loginBtn}
             />
+
+            {/* Switch to Login Button */}
             <TouchableOpacity onPress={() => navigation.navigate("Login")}>
                 <Text style={styles.signupText}>Login</Text>
             </TouchableOpacity>
+
+            {/* Snackbar */}
+            <Snackbar
+                visible={visibleSnack}
+                onDismiss={() => setVisibleSnack(false)}
+                duration={2000}
+            >
+                User login successful!
+            </Snackbar>
         </ImageBackground>
     );
 }

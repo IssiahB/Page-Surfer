@@ -1,87 +1,64 @@
-import React from "react";
+import React, { useState } from "react";
 import { useFonts } from "expo-font";
-import Button from "../components/Button";
-import {
-    ImageBackground,
-    StatusBar,
-    StyleSheet,
-    Text,
-    View,
-    Image,
-    StatusBarStyle,
-} from "react-native";
+import { View, Text, FlatList, StyleSheet, StatusBar } from "react-native";
+import SearchBar from "../components/SearchBar";
 
-const backgroundImage = require("../../assets/images/book-cover.jpg");
-const logoImage = require("../../assets/images/logo-round.png");
-
-function handleSignup() {
-    console.log("Signup");
-}
-
-function handleLogin() {
-    console.log("Login");
-}
-
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ route, navigation }) {
     const [fontsLoaded] = useFonts({
         "Forum-Regular": require("../../assets/fonts/Forum-Regular.ttf"),
     });
 
-    if (!fontsLoaded) {
-        return <Text> Loading Assets... </Text>;
-    }
+    const username = "Username";
+
+    // const { username } = route.params;
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isSearchClicked, setIsSearchClicked] = useState(false);
+    const recentSearches = ["Book1", "Book2"]; // Example of recent searches
+    const savedBooks = ["Saved Book 1", "Saved Book 2"]; // Example of saved books
+
+    const handleSearch = () => {
+        // Implement search logic here
+    };
 
     return (
-        <ImageBackground
-            source={backgroundImage}
-            resizeMode="cover"
-            style={styles.backgound}
-        >
-            <StatusBar backgroundColor="#fff4ed" barStyle="dark-content" />
-            <Image
-                source={logoImage}
-                style={styles.logo}
-                resizeMode="contain"
-            ></Image>
-            <Text style={styles.text}>Knowledge Where It's Needed</Text>
-            <Button
-                textContent="Sign Up"
-                textColor="#db5300"
-                btnColor="#fff4ed"
-                onPress={() => {
-                    navigation.navigate("Signup");
-                }}
+        <View style={styles.container}>
+            <StatusBar backgroundColor="#d9dbda" barStyle="dark-content" />
+            <Text style={styles.title}>Welcome, {username}!</Text>
+
+            <SearchBar
+                clicked={isSearchClicked}
+                searchPhrase={searchQuery}
+                setSearchPhrase={setSearchQuery}
+                setClicked={setIsSearchClicked}
             />
-            <Button
-                textContent="Log In"
-                textColor="#fff4ed"
-                btnColor="#db5300"
-                onPress={() => {
-                    navigation.navigate("Login");
-                }}
-                style={{ marginTop: "10%" }}
+
+            <Text style={{ fontSize: 18, marginTop: 20 }}>Recent Searches</Text>
+            <FlatList
+                data={recentSearches}
+                renderItem={({ item }) => <Text>{item}</Text>}
+                keyExtractor={(item, index) => index.toString()}
             />
-        </ImageBackground>
+
+            <Text style={{ fontSize: 18, marginTop: 20 }}>Saved Books</Text>
+            <FlatList
+                data={savedBooks}
+                renderItem={({ item }) => <Text>{item}</Text>}
+                keyExtractor={(item, index) => index.toString()}
+            />
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    backgound: {
-        width: "100%",
+    container: {
+        padding: 20,
+        // backgroundColor: "#fff4ed",
         height: "100%",
     },
-    logo: {
-        width: 280,
-        height: 280,
-        marginTop: "10%",
-        marginLeft: "16%",
-    },
-    text: {
-        color: "#db5300",
+    title: {
+        fontSize: 30,
         textAlign: "center",
-        marginTop: "5%",
+        marginVertical: 20,
         fontFamily: "Forum-Regular",
-        fontSize: 20,
-        marginBottom: "60%",
     },
 });

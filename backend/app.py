@@ -21,6 +21,7 @@ CORS(app)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///storage.db'
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
 app.config['JWT_SECRET_KEY'] = os.getenv("JWT_SECRET_KEY")
+app.config['PORT'] =  5000 if os.getenv("PORT") == None else os.getenv("PORT")
 
 # Initialize extensions
 db = SQLAlchemy(app)
@@ -41,15 +42,17 @@ with app.app_context():
 
 @app.route('/signup', methods=['POST'])
 def signup():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if data == None:
+        return jsonify({"error": "Unsupported Media Type: Could not accept request."}), 415
 
-    # Validate Input
+    # Validate Inputs
     if (util.validate_email(data['email']) != True):
-        return jsonify({"message": "Invalid Email"}), 401
+        return jsonify({"message": "Invalid email"})
     if (util.validate_username(data['username']) != True):
-        return jsonify({"message": "Invalid Username"}), 401
-    if (data['password'] < 6):
-        return jsonify({"message": "Password Too Short"}), 401
+        return jsonify({"message": "Username must include only letters, numbers, -, or _."})
+    if (len(data['password']) < 6):
+        return jsonify({"message": "Password must be 6 characters"})
 
     # Hash password and create new user in database
     hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
@@ -62,23 +65,42 @@ def signup():
     return jsonify({"message": "User created successfully!", "access_token":access_token}), 201
 
 @app.route('/login', methods=['POST'])
-@limiter.limit("6 per minute")
+# @limiter.limit("6 per minute")
 def login():
-    data = request.get_json()
-    email_login = True if data.get('login_type', None) == 'email' else False
+    # Parse request json
+    data = request.get_json(silent=True)
+    if data != None:
+        # Get usertype this could be email or username
+        user_type = data.get('user', None)
+        if user_type == None or not isinstance(user_type, str):
+            # usertype doesn't exist or is not a string
+            return jsonify({"error": "Must provide 'user' key and value"}), 401
+        
+        query = None
+        if "@" in user_type:
+            # usertype is email. Validate and query database
+            if util.validate_email(user_type):
+                query = User.query.filter_by(email=user_type)
+        else:
+            # usertype is username. Validate and query database
+            if util.validate_username(user_type):
+                query = User.query.filter_by(username=user_type)
 
-    if email_login:
-        user = User.query.filter_by(email=data['email']).first()
-    else:
-        user = User.query.filter_by(username=data['username']).first()
-
-    if user and bcrypt.check_password_hash(user.password, data['password']):
-        access_token = create_access_token(identity=user.username)
-        return jsonify({"message": "User login successful!", "username": user.username, "access_token":access_token})
-    return jsonify({"error": "Invalid credentials"}), 401
+        # Execute query
+        user = query.first() if query != None else None
+        
+        # Check user is validated and passwords match
+        if user and bcrypt.check_password_hash(user.password, data['password']): #TODO data['password'] is not safe input
+            access_token = create_access_token(identity=user.username)
+            return jsonify({"message": "User login successful!", "username": user.username, "access_token":access_token})
+        else:
+            # User validation unsuccessful or incorrect password
+            return jsonify({"message": "Incorrect user or password"})
+    # Request could not be parsed
+    return jsonify({"error": "Unsupported Media Type: Could not accept request."}), 415
 
 # Route to fetch data from OpenLibrary API
-@app.route('/openlibrary', methods=['GET'])
+@app.route('/search', methods=['GET'])
 @jwt_required()
 def get_book_data():
     book_name = request.args.get('book_name')
@@ -88,4 +110,4 @@ def get_book_data():
     return jsonify({"error": "Unable to fetch data"}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=app.config.get('PORT'), debug=True)

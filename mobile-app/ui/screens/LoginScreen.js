@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useFonts } from "expo-font";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Button from "../components/Button";
+import { Snackbar } from "react-native-paper";
 import {
     ImageBackground,
     StatusBar,
@@ -12,21 +12,26 @@ import {
     TouchableOpacity,
 } from "react-native";
 
+import Button from "../components/Button";
+import { loginUser } from "../../api/auth";
+import { AuthContext } from "../../logic/Contexts";
+
 const backgroundImage = require("../../assets/images/register-background.jpg");
 
-const onPressLogin = () => {
-    // Do something about login operation
-};
 const onPressForgotPassword = () => {
     // Do something about forgot password operation
 };
-const onPressSignUp = () => {
-    // Do something about signup operation
-};
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, route }) {
     const [fontsLoaded] = useFonts({
         "Forum-Regular": require("../../assets/fonts/Forum-Regular.ttf"),
+    });
+
+    const { isLoggedIn, setIsLoggedIn } = useContext(AuthContext);
+
+    const [error, setError] = useState({
+        errorMessage: "",
+        errorFlag: false,
     });
 
     const [username, setUsername] = useState("");
@@ -34,10 +39,33 @@ export default function LoginScreen({ navigation }) {
     // State variable to hold the password
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [visibleSnack, setVisibleSnack] = useState(false); // Snackbar visibility
 
     // Function to toggle the password visibility state
     const toggleShowPassword = () => {
         setShowPassword(!showPassword);
+    };
+
+    const onPressLogin = async () => {
+        try {
+            const response = await loginUser(username, password);
+
+            if (response[0].success) {
+                setVisibleSnack(true); // Show success message
+                setTimeout(() => {
+                    setVisibleSnack(false);
+                    setIsLoggedIn(true);
+                }, 1000);
+            } else {
+                setError({
+                    errorMessage: response[0].message,
+                    errorFlag: true,
+                });
+            }
+        } catch (error) {
+            setError({ errorMessage: "Client Error", errorFlag: true });
+            console.error(error);
+        }
     };
 
     return (
@@ -46,16 +74,28 @@ export default function LoginScreen({ navigation }) {
             resizeMode="cover"
             style={styles.backgound}
         >
+            {/* Status bar style and Title */}
             <StatusBar backgroundColor="#fff4ed" barStyle="dark-content" />
             <Text style={styles.title}> Login </Text>
+
+            {/* Error message */}
+            {error.errorFlag ? (
+                <Text style={styles.error}>{error.errorMessage}</Text>
+            ) : (
+                <Text></Text>
+            )}
+
+            {/* User input field */}
             <View style={styles.container}>
                 <TextInput
                     style={styles.input}
-                    placeholder="Username"
+                    placeholder="Username or Email"
                     onChangeText={(text) => setUsername(text)}
                     placeholderTextColor="#003f5c"
                 />
             </View>
+
+            {/* Password field with eye icon */}
             <View style={styles.container}>
                 <TextInput
                     // Set secureTextEntry prop to hide
@@ -76,9 +116,12 @@ export default function LoginScreen({ navigation }) {
                 />
             </View>
 
+            {/* Forgot password button */}
             <TouchableOpacity onPress={onPressForgotPassword}>
                 <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
+
+            {/* Official Login Button */}
             <Button
                 textContent="Login"
                 textColor="#fff4ed"
@@ -86,9 +129,20 @@ export default function LoginScreen({ navigation }) {
                 onPress={onPressLogin}
                 style={styles.loginBtn}
             />
+
+            {/* Change to signup button */}
             <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
                 <Text style={styles.signupText}>Signup</Text>
             </TouchableOpacity>
+
+            {/* Snackbar */}
+            <Snackbar
+                visible={visibleSnack}
+                onDismiss={() => setVisibleSnack(false)}
+                duration={2000}
+            >
+                User login successful!
+            </Snackbar>
         </ImageBackground>
     );
 }
@@ -105,6 +159,10 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: "30%",
         marginBottom: "25%",
+    },
+    error: {
+        textAlign: "center",
+        color: "red",
     },
     container: {
         flexDirection: "row",

@@ -17,7 +17,10 @@ disallowed_characters = ['<', '>', '%', '^', '@', '$',
 
 def validate_username(username: str) -> bool:
     length = len(username)
-    if disallowed_characters in username:
+    # True if any username character in disallowed list
+    contains_dischar = any(item in username for item in disallowed_characters)
+
+    if contains_dischar:
         return False
     if length > max_length or length < min_length:
         return False
